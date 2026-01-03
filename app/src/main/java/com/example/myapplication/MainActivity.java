@@ -1,7 +1,16 @@
-package com.example.myapplication;
+package com.example.myapplication;import androidx.appcompat.app.AppCompatActivity;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.text.format.Formatter;
+import android.util.Log;
+import android.widget.TextView;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,7 +31,27 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initNetwork("192.168.3.5", 8888);
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+
+        // Получаем IP-адрес устройства
+        String ipAddress = getWifiIpAddress(this);
+
+        // Выводим IP на экран для отладки
+        TextView ipTextView = findViewById(R.id.statusText); // Убедитесь, что у вас есть TextView с таким id в activity_main.xml
+        if (ipTextView != null) {
+            ipTextView.setText("IP: " + (ipAddress != null ? ipAddress : "Not Found"));
+        }
+
+        // Используем полученный IP. Если IP не найден, ничего не делаем.
+        if (ipAddress != null) {
+            initNetwork("192.168.3.5", 8888);
+            Log.d("NetworkInit", "Initializing with IP: " + ipAddress);
+        } else {
+            Log.e("NetworkInit", "Could not get Wi-Fi IP address.");
+            // Можно показать пользователю сообщение об ошибке
+        }
+
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         JoystickView joystickLeft = findViewById(R.id.joystickLeft);
         JoystickView joystickRight = findViewById(R.id.joystickRight);
@@ -42,5 +71,26 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendCombinedInput() {
         sendInput(leftStickX, leftStickY, rightStickX, rightStickY, 0);
+    }
+
+    /**
+     * Получает IPv4 адрес устройства в сети Wi-Fi.
+     * @param context Контекст приложения.
+     * @return Строка с IP-адресом или null, если не удалось его получить.
+     */
+    private String getWifiIpAddress(Context context) {
+        WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(WIFI_SERVICE);
+        if (wifiManager != null) {
+            // Formatter.formatIpAddress устарел, но отлично работает для преобразования int в строку
+            // и не требует дополнительных проверок на IPv4/IPv6.
+            @SuppressWarnings("deprecation")
+            String ipAddress = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
+            // Проверка, что IP не равен "0.0.0.0" (что означает отсутствие подключения)
+            if ("0.0.0.0".equals(ipAddress)) {
+                return null;
+            }
+            return ipAddress;
+        }
+        return null;
     }
 }

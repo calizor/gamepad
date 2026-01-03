@@ -16,6 +16,16 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                // В Kotlin DSL для передачи флагов компиляции
+                cppFlags("-Wl,-z,max-page-size=16384")
+
+                // Если нужно добавить несколько флагов:
+                // cppFlags("-флаг1", "-флаг2")
+            }
+        }
     }
 
     buildTypes {
@@ -35,6 +45,7 @@ android {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
+
         }
     }
     buildFeatures {
